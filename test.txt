@@ -1,0 +1,134 @@
+⏺ Example 1 — Human-like academic text
+
+  ▎ "The relationship between language and cognition has fascinated researchers for decades. 
+  ▎ Philosophers argue that linguistic structure constrains thought, while psychologists 
+  ▎ emphasize the role of embodied experience. Recent neuroimaging studies reveal that 
+  ▎ bilingual speakers activate distinct neural pathways. This evidence suggests that language
+  ▎  actively shapes how humans categorize reality."
+
+  Tracing the algorithm:
+  - Every content stem appears exactly once. "language" appears twice but its stem "languag"
+  maps to count=2, which is below word_min_count=3.
+  - No bigram or trigram repeats across sentences.
+  - Sentence openers (content words): "relationship", "philosophers", "recent", "evidence" —
+  all distinct.
+
+  RepetitionResult(
+      repeated_words=[],
+      repeated_phrases=[],
+      repeated_openings=[],
+      repetition_score=0.0,
+  )                                          
+
+  ---
+  Example 2 — AI-like repetitive text
+  
+  ▎ "Digital technology plays a crucial role in modern education. Digital technology has 
+  ▎ transformed how students learn. Furthermore, digital technology enables access to vast 
+  ▎ resources. Research shows that digital technology improves outcomes. Research shows that 
+  ▎ students benefit from digital tools. Research shows that educators must adapt to digital 
+  ▎ technology."
+                                             
+  Tracing the algorithm (48 tokens, 6 sentences):
+
+  Stems meeting word_min_count=3:
+
+  ┌──────────────┬─────────────┬───────┬───────────────────┐
+  │ Surface form │    Stem     │ Count │     Positions     │
+  ├──────────────┼─────────────┼───────┼───────────────────┤
+  │ "digital"    │ "digit"     │ 6     │ [0,9,17,27,37,46] │
+  ├──────────────┼─────────────┼───────┼───────────────────┤
+  │ "technology" │ "technolog" │ 5     │ [1,10,18,28,47]   │
+  ├──────────────┼─────────────┼───────┼───────────────────┤
+  │ "research"   │ "research"  │ 3     │ [24,31,39]        │
+  ├──────────────┼─────────────┼───────┼───────────────────┤
+  │ "shows"      │ "show"      │ 3     │ [25,32,40]        │
+  └──────────────┴─────────────┴───────┴───────────────────┘
+
+  Bigrams/trigrams meeting phrase_min_count=2:
+  
+  ┌───────────────────────┬───────┬────────────────┐
+  │        Phrase         │ Count │   Positions    │
+  ├───────────────────────┼───────┼────────────────┤
+  │ "digital technology"  │ 5     │ [0,9,17,27,46] │
+  ├───────────────────────┼───────┼────────────────┤
+  │ "research shows that" │ 3     │ [24,31,39]     │
+  ├───────────────────────┼───────┼────────────────┤
+  │ "research shows"      │ 3     │ [24,31,39]     │
+  ├───────────────────────┼───────┼────────────────┤
+  │ "shows that"          │ 3     │ [25,32,40]     │
+  └───────────────────────┴───────┴────────────────┘
+  
+  Sentence openers: "digital"×2, "furthermore"×1, "research"×3 → meets opening_min_count=2
+
+  Score:
+  word_signal   = (5+4+2+2) / 48 = 13/48 ≈ 0.271
+  phrase_signal = (5×2 + 3×3 + 3×2 + 3×2) / 48 = 31/48 ≈ 0.646
+  opener_signal = 2 / 6 ≈ 0.333
+  
+  score = min(1.0, 0.5×0.271 + 0.3×0.646 + 0.2×0.333) ≈ 0.40
+
+  RepetitionResult(
+      repeated_words=[
+          RepeatedItem(text="digital",     count=6, positions=[0,9,17,27,37,46]),
+          RepeatedItem(text="technology",  count=5, positions=[1,10,18,28,47]),
+          RepeatedItem(text="research",    count=3, positions=[24,31,39]),
+          RepeatedItem(text="shows",       count=3, positions=[25,32,40]),
+      ],
+      repeated_phrases=[
+          RepeatedItem(text="digital technology",   count=5, positions=[0,9,17,27,46]),
+          RepeatedItem(text="research shows that",  count=3, positions=[24,31,39]),
+          RepeatedItem(text="research shows",       count=3, positions=[24,31,39]),
+          RepeatedItem(text="shows that",           count=3, positions=[25,32,40]),
+      ],
+      repeated_openings=["research", "digital"],
+      repetition_score=0.40,                 
+  )
+  
+  ---                                        
+  Example 3 — Mixed text
+  
+  ▎ "Students who engage with digital tools often demonstrate higher levels of motivation. 
+  ▎ Research suggests that the connection between technology and academic performance is 
+  ▎ well-documented. Students may benefit from structured guidance on evaluating online 
+  ▎ sources. Critical thinking skills, however, remain essential regardless of the medium 
+  ▎ through which knowledge is acquired. Educators face the challenge of balancing digital 
+  ▎ innovation with foundational learning principles."
+
+  Tracing the algorithm (62 tokens, 5 sentences):
+
+  - "student" stem appears twice (tokens 0, 25) — below word_min_count=3, not flagged.
+  - "digit" stem appears twice — below threshold, not flagged.
+  - No bigram or trigram repeats ≥ 2 times across the 5 distinct sentences.
+  - Sentence openers: "students"×2, "research"×1, "critical"×1, "educators"×1 → only
+  "students" meets opening_min_count=2.
+
+  Score:
+  word_signal   = 0 / 62 = 0.0
+  phrase_signal = 0 / 62 = 0.0               
+  opener_signal = 1 / 5 = 0.2
+  
+  score = min(1.0, 0.5×0.0 + 0.3×0.0 + 0.2×0.2) = 0.04
+
+  RepetitionResult(                          
+      repeated_words=[],
+      repeated_phrases=[],
+      repeated_openings=["students"],        
+      repetition_score=0.04,
+  )
+
+  ---
+  Score comparison:                          
+  
+  ┌────────────┬───────┬─────────────────────────────────────────┐
+  │    Text    │ Score │                 Signal                  │
+  ├────────────┼───────┼─────────────────────────────────────────┤
+  │ Human-like │ 0.00  │ No repetition at any level              │
+  ├────────────┼───────┼─────────────────────────────────────────┤
+  │ AI-like    │ 0.40  │ Heavy phrase + word + opener repetition │
+  ├────────────┼───────┼─────────────────────────────────────────┤
+  │ Mixed      │ 0.04  │ Only a weak opener signal               │
+  └────────────┴───────┴─────────────────────────────────────────┘
+
+  The phrase signal weight (0.3×) is what drives Example 2 so high — formulaic writing tends
+  to repeat full phrases ("research shows that", "digital technology"), not just single words.
