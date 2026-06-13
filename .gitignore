@@ -48,3 +48,6 @@ claude.md
 tasks.md
 roadmap.md
 .ruff_cache
+.ruff_cache/
+output.txt
+draft.txt
