@@ -132,3 +132,7 @@
 
   The phrase signal weight (0.3×) is what drives Example 2 so high — formulaic writing tends
   to repeat full phrases ("research shows that", "digital technology"), not just single words.
+
+
+
+

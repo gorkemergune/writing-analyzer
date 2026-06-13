@@ -99,66 +99,107 @@ class TransitionResult(BaseModel):
     """Output of the transition word analysis module.
 
     Attributes:
-        found_transitions: All transition words/phrases detected in the text.
-        transition_density: Mean transition words per sentence.
-        overused_transitions: Transitions appearing above the overuse threshold.
+        transition_count: Total occurrences of all transition expressions.
+        unique_transitions: Distinct transition strings detected, sorted
+            alphabetically.
+        repeated_transitions: Transitions appearing more than once, sorted
+            alphabetically.
+        transition_density: Total occurrences divided by sentence count.
+        transition_score: Normalized overuse signal in [0, 1]. Higher means
+            more formulaic transition use.
     """
 
-    found_transitions: list[str]
+    transition_count: int = Field(ge=0)
+    unique_transitions: list[str]
+    repeated_transitions: list[str]
     transition_density: float = Field(
         ge=0.0,
-        description="Transition words per sentence.",
+        description="Transition occurrences per sentence.",
     )
-    overused_transitions: list[str]
+    transition_score: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Normalized overuse signal. 0 = healthy, 1 = formulaic.",
+    )
 
 
 class BurstinessResult(BaseModel):
     """Output of the burstiness (sentence rhythm) analysis module.
 
-    Burstiness measures sentence-length variability. Human writing is typically
-    more bursty (varied) while formulaic writing tends to be uniform.
+    Burstiness measures sentence-length variability using B = (σ−μ)/(σ+μ).
+    Human writing tends to be more varied; formulaic writing is uniform.
 
     Attributes:
-        burstiness_score: Index in [-1, 1]. Negative = uniform, positive = varied.
-        sentence_variance: Raw variance of per-sentence word counts.
-        interpretation: Human-readable label, e.g. 'Uniform rhythm (low burstiness)'.
+        burstiness_score: Normalized risk score in [0, 1]. Higher means more
+            uniform (suspicious). Derived as (1 − B) / 2.
+        burstiness_value: Raw B index in [−1, 1]. Negative = uniform,
+            positive = bursty.
+        classification: Categorical label — one of: very_uniform, uniform,
+            neutral, bursty, highly_bursty.
     """
 
     burstiness_score: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Normalized risk score. 0 = varied writing, 1 = very uniform.",
+    )
+    burstiness_value: float = Field(
         ge=-1.0,
         le=1.0,
-        description="Burstiness index. Negative = uniform, positive = varied.",
+        description="Raw B index: (σ−μ)/(σ+μ). Negative = uniform, positive = bursty.",
     )
-    sentence_variance: float = Field(ge=0.0)
-    interpretation: str
+    classification: str = Field(
+        description="One of: very_uniform, uniform, neutral, bursty, highly_bursty.",
+    )
 
 
 class ReadabilityResult(BaseModel):
     """Output of the readability analysis module.
 
+    English: Flesch Reading Ease (0–100, higher = easier) and Flesch-Kincaid
+        Grade Level for the grade label.
+    Turkish: Turkish Readability Index (TRI), a simplified heuristic on the
+        same 0–100 scale. See analyzers/readability.py for formula and
+        documented limitations.
+
     Attributes:
-        score: Raw readability score (e.g. Flesch Reading Ease for English).
-        grade_level: Approximate educational grade level as a string.
-        interpretation: Human-readable description of the readability level.
+        readability_score: Score in [0, 100]. Higher = easier to read.
+        grade_level: Educational stage label (e.g. "Grade 8" or
+            "Lise (High School, Grade 9-12)").
+        classification: Difficulty tier — one of: very_difficult, difficult,
+            standard, easy, very_easy.
     """
 
-    score: float
+    readability_score: float = Field(
+        ge=0.0,
+        le=100.0,
+        description="Readability score in [0, 100]. Higher = easier.",
+    )
     grade_level: str
-    interpretation: str
+    classification: str
 
 
 class ClicheResult(BaseModel):
     """Output of the cliché detection module.
 
     Attributes:
-        found_cliches: List of cliché strings detected in the text.
-        cliche_density: Number of clichés per 100 words.
+        detected_cliches: Unique cliché strings found, sorted alphabetically.
+        cliche_count: Total occurrences of all detected clichés.
+        cliche_density: Total cliché occurrences per 100 word-tokens.
+        cliche_score: Normalized overuse signal in [0, 1]. Saturates at a
+            density of 5 clichés per 100 words.
     """
 
-    found_cliches: list[str]
+    detected_cliches: list[str]
+    cliche_count: int = Field(ge=0)
     cliche_density: float = Field(
         ge=0.0,
-        description="Clichés per 100 words.",
+        description="Cliché occurrences per 100 words.",
+    )
+    cliche_score: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Normalized overuse signal. 0 = clean, 1 = highly formulaic.",
     )
 
 
@@ -195,6 +236,8 @@ class AcademicRiskScore(BaseModel):
         risk_level: Categorical risk tier derived from overall_score.
         confidence: Assessment confidence (0–1). Lower for short texts.
         component_scores: Per-module score breakdown.
+        explanations: Human-readable descriptions of elevated risk signals.
+            Empty when no component exceeds the explanation threshold.
     """
 
     overall_score: float = Field(ge=0.0, le=100.0)
@@ -205,6 +248,7 @@ class AcademicRiskScore(BaseModel):
         description="Assessment confidence. Lower for short texts.",
     )
     component_scores: ComponentScores
+    explanations: list[str]
 
 
 class AnalysisReport(BaseModel):
