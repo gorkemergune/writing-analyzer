@@ -6,11 +6,6 @@ from src.analyzers.base import BaseAnalyzer
 from src.models.analysis import AnalysisContext
 from src.models.response import ClicheResult
 
-# ---------------------------------------------------------------------------
-# Known cliché expressions per language.
-# All entries must be lowercase; multi-word phrases are space-separated.
-# ---------------------------------------------------------------------------
-
 _EN_CLICHES: tuple[str, ...] = (
     "in conclusion",
     "it is important to note that",
@@ -31,16 +26,6 @@ _TR_CLICHES: tuple[str, ...] = (
 
 _ALL_CLICHES: tuple[str, ...] = _EN_CLICHES + _TR_CLICHES
 
-# ---------------------------------------------------------------------------
-# Phrase map: token-tuple → canonical display string.
-#
-# "in today's world" requires two variants because the two tokenizer
-# pipelines handle the apostrophe differently:
-#   - NLTK (isalpha filter):  "today's" → "today"   ("in","today","world")
-#   - regex [a-zA-Z]+:        "today's" → "today","s" ("in","today","s","world")
-# Both variants map to the same canonical display string.
-# ---------------------------------------------------------------------------
-
 
 def _build_phrase_map() -> dict[tuple[str, ...], str]:
     """Build a mapping from token-tuples to canonical cliché strings.
@@ -56,17 +41,14 @@ def _build_phrase_map() -> dict[tuple[str, ...], str]:
     for phrase in _ALL_CLICHES:
         if "'" not in phrase:
             mapping[tuple(phrase.split())] = phrase
-    # Apostrophe variants for "in today's world":
-    mapping[("in", "today", "world")] = "in today's world"       # NLTK
-    mapping[("in", "today", "s", "world")] = "in today's world"  # regex
+    # NLTK and regex tokenizers split "today's" differently; both variants map to the same phrase.
+    mapping[("in", "today", "world")] = "in today's world"
+    mapping[("in", "today", "s", "world")] = "in today's world"
     return mapping
 
 
 _PHRASE_MAP: dict[tuple[str, ...], str] = _build_phrase_map()
 
-# Score normalization cap: density ≥ this value → cliche_score = 1.0.
-# At 5 clichés per 100 words (one per 20 words) the text is considered
-# maximally formulaic.
 _SCORE_DENSITY_CAP: float = 5.0
 
 
@@ -122,10 +104,6 @@ class ClicheAnalyzer(BaseAnalyzer[ClicheResult]):
             cliche_score=score,
         )
 
-
-# ---------------------------------------------------------------------------
-# Module-level pure helper functions — independently testable, no state.
-# ---------------------------------------------------------------------------
 
 
 def _count_cliches(tokens: tuple[str, ...]) -> Counter[str]:

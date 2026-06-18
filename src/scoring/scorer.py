@@ -6,6 +6,7 @@ from src.models.response import (
     BurstinessResult,
     ClicheResult,
     ComponentScores,
+    ContributionScores,
     ReadabilityResult,
     RepetitionResult,
     SentenceStats,
@@ -14,29 +15,10 @@ from src.models.response import (
 )
 from src.scoring.weights import DEFAULT_WEIGHTS, ScoringWeights
 
-# ---------------------------------------------------------------------------
-# Module-level constants
-# ---------------------------------------------------------------------------
-
-# Readability baseline: FRE / TRI scores at or below this value are
-# considered appropriately complex for academic writing.  Text scoring
-# above the baseline is penalised proportionally on the readability
-# component because excessively easy academic prose is a risk signal.
-# 40.0 corresponds to "difficult" on the Flesch Reading Ease scale and
-# to approximately Lise (high-school) level on the Turkish TRI scale.
 _READABILITY_BASELINE: float = 40.0
-
-# Confidence saturation: a text with this many word-tokens receives the
-# maximum confidence of 1.0.  Shorter texts receive proportionally lower
-# confidence because the signal-to-noise ratio is lower.
 _CONFIDENCE_WORD_THRESHOLD: int = 300
-
-# Components scoring above this threshold generate an explanation entry.
-# 40/100 represents a moderate-to-strong signal.
 _EXPLANATION_THRESHOLD: float = 40.0
 
-# Risk-level score boundaries (inclusive upper bounds).
-# Matches the RiskLevel enum docstring in src/models/enums.py.
 _RISK_THRESHOLDS: tuple[tuple[float, RiskLevel], ...] = (
     (30.0, RiskLevel.LOW),
     (55.0, RiskLevel.MODERATE),
@@ -119,18 +101,16 @@ class AcademicRiskScorer:
             cliches=cliches,
         )
         overall = _weighted_sum(components, self._weights)
+        contributions = _build_contributions(components, self._weights)
         return AcademicRiskScore(
             overall_score=round(overall, 4),
             risk_level=_classify_risk(overall),
             confidence=_compute_confidence(word_stats.total_words),
             component_scores=components,
+            contribution_scores=contributions,
             explanations=_build_explanations(components),
         )
 
-
-# ---------------------------------------------------------------------------
-# Pure helper functions — independently testable, no state.
-# ---------------------------------------------------------------------------
 
 
 def _build_components(
@@ -198,6 +178,34 @@ def _weighted_sum(components: ComponentScores, weights: ScoringWeights) -> float
         + weights.lexical_poverty * components.lexical_poverty
         + weights.cliche_density * components.cliche_density
         + weights.readability * components.readability
+    )
+
+
+def _build_contributions(
+    components: ComponentScores, weights: ScoringWeights
+) -> ContributionScores:
+    """Compute the weighted contribution of each component to the overall score.
+
+    Each field is component_score × its weight, so all fields sum to
+    overall_score.  This lets callers see which module is driving the verdict.
+
+    Args:
+        components: Per-module scores in [0, 100].
+        weights: Weight configuration that sums to 1.0.
+
+    Returns:
+        ContributionScores where each field ∈ [0, 100] and fields sum to
+        overall_score.
+    """
+    return ContributionScores(
+        repetition=round(weights.repetition * components.repetition, 4),
+        transition_overuse=round(
+            weights.transition_overuse * components.transition_overuse, 4
+        ),
+        low_burstiness=round(weights.low_burstiness * components.low_burstiness, 4),
+        lexical_poverty=round(weights.lexical_poverty * components.lexical_poverty, 4),
+        cliche_density=round(weights.cliche_density * components.cliche_density, 4),
+        readability=round(weights.readability * components.readability, 4),
     )
 
 

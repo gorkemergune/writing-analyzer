@@ -24,17 +24,8 @@ from src.scoring.scorer import AcademicRiskScorer
 from src.services.language_detector import LanguageDetector
 from src.services.tokenizer import TokenizerService
 
-# ---------------------------------------------------------------------------
-# Module-level constants
-# ---------------------------------------------------------------------------
-
-# Matches _EXPLANATION_THRESHOLD in scorer.py; suggestions fire for the same
-# component signals that generate explanations.
 _SUGGESTION_THRESHOLD: float = 40.0
 
-# Per-component actionable improvement text, keyed by component name.
-# Ordering is alphabetical so _build_suggestions and _build_explanations
-# (in scorer.py) remain aligned.
 _SUGGESTIONS: dict[str, str] = {
     "cliche_density": (
         "Replace formulaic phrases such as 'in conclusion' and 'it is important "
@@ -62,20 +53,11 @@ _SUGGESTIONS: dict[str, str] = {
     ),
 }
 
-# Highlight priority constants — lower value wins when two spans share a
-# start position.  Clichés outrank transitions, transitions outrank phrases.
 _PRI_CLICHE: int = 0
 _PRI_TRANSITION: int = 1
 _PRI_PHRASE: int = 2
 
-# Maximum repeated phrases highlighted per document; prevents flooding the
-# UI for highly repetitive texts.
 _MAX_PHRASE_HIGHLIGHTS: int = 5
-
-
-# ---------------------------------------------------------------------------
-# Service class
-# ---------------------------------------------------------------------------
 
 
 class AnalysisService:
@@ -206,11 +188,6 @@ class AnalysisService:
         )
 
 
-# ---------------------------------------------------------------------------
-# Module-level pure helper functions — independently testable, no state.
-# ---------------------------------------------------------------------------
-
-
 def _find_spans(text: str, phrase: str) -> list[tuple[int, int]]:
     """Return (start, end) spans for all non-overlapping matches in text.
 
@@ -280,7 +257,6 @@ def _build_highlights(
     Returns:
         Non-overlapping Highlight list in document order.
     """
-    # Each entry: (start, end, label, severity, priority)
     entries: list[tuple[int, int, str, RiskLevel, int]] = []
 
     cliche_sev = _score_to_risk(academic_risk.component_scores.cliche_density)
@@ -298,10 +274,8 @@ def _build_highlights(
         for start, end in _find_spans(text, item.text):
             entries.append((start, end, "repeated_phrase", rep_sev, _PRI_PHRASE))
 
-    # Sort by start position; lower priority integer wins ties (cliché first).
     entries.sort(key=lambda e: (e[0], e[4]))
 
-    # Remove any span whose start falls inside an already-accepted span.
     result: list[Highlight] = []
     covered_end = -1
     for start, end, label, severity, _ in entries:

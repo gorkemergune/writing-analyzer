@@ -23,6 +23,7 @@ convention = "google"
 [lint.per-file-ignores]
 "tests/**/*.py" = ["D", "E501"]
 "src/**/__init__.py" = ["D", "F401"]
+"frontend/**/*.py" = ["D", "E501"]
 
 [lint.isort]
 known-first-party = ["src"]

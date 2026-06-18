@@ -225,6 +225,29 @@ class ComponentScores(BaseModel):
     readability: float = Field(ge=0.0, le=100.0)
 
 
+class ContributionScores(BaseModel):
+    """Weighted contribution of each component to the final score.
+
+    Each field equals component_score × weight, so they sum to overall_score.
+    Use this to see which module is driving the risk verdict.
+
+    Attributes:
+        repetition: Weighted contribution from the repetition module.
+        transition_overuse: Weighted contribution from the transition module.
+        low_burstiness: Weighted contribution from the burstiness module.
+        lexical_poverty: Weighted contribution from the lexical diversity module.
+        cliche_density: Weighted contribution from the cliché detection module.
+        readability: Weighted contribution from the readability module.
+    """
+
+    repetition: float = Field(ge=0.0, le=100.0)
+    transition_overuse: float = Field(ge=0.0, le=100.0)
+    low_burstiness: float = Field(ge=0.0, le=100.0)
+    lexical_poverty: float = Field(ge=0.0, le=100.0)
+    cliche_density: float = Field(ge=0.0, le=100.0)
+    readability: float = Field(ge=0.0, le=100.0)
+
+
 class AcademicRiskScore(BaseModel):
     """Aggregated academic risk assessment.
 
@@ -236,6 +259,8 @@ class AcademicRiskScore(BaseModel):
         risk_level: Categorical risk tier derived from overall_score.
         confidence: Assessment confidence (0–1). Lower for short texts.
         component_scores: Per-module score breakdown.
+        contribution_scores: Weighted contribution of each module (sums to
+            overall_score).
         explanations: Human-readable descriptions of elevated risk signals.
             Empty when no component exceeds the explanation threshold.
     """
@@ -248,6 +273,7 @@ class AcademicRiskScore(BaseModel):
         description="Assessment confidence. Lower for short texts.",
     )
     component_scores: ComponentScores
+    contribution_scores: ContributionScores
     explanations: list[str]
 
 

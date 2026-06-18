@@ -44,10 +44,23 @@ coverage.xml
 .ipynb_checkpoints/
 
 claude.md
+CLAUDE.md
 .claude
 tasks.md
+TASKS.md
 roadmap.md
+ROADMAP.md
 .ruff_cache
 .ruff_cache/
 output.txt
 draft.txt
+
+# Personal / internal Turkish docs
+ARCHITECTURE_TR.txt
+USER_GUIDE_TR.txt
+docs/NASIL_KULLANILIR.txt
+docs/PROJE_SUNUMU.txt
+
+# Scratch files
+test.txt
+test_output.log

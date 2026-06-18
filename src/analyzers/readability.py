@@ -1,47 +1,4 @@
-"""Readability analyzer for English (Flesch) and Turkish (simplified index).
-
-Turkish Readability Index (TRI) — formula and limitations
-==========================================================
-
-No widely validated Turkish readability formula exists that matches the
-psychometric rigour of the English Flesch scales.  The Ateşman (1997) formula
-(RS = 198.825 − 40.175 × SPW − 2.610 × ASL) was calibrated on a small,
-dated corpus and is not officially standardised.
-
-This module implements an independent *Turkish Readability Index* (TRI):
-
-    TRI = 100 − 2.6 × ASL − 12.0 × max(0, SPW − 1.5)
-
-where:
-    ASL  = average sentence length in words (total tokens / total sentences)
-    SPW  = average syllables per word, approximated by counting Turkish
-           vowel letters (a, e, ı, i, o, ö, u, ü) per token.
-
-Rationale for design choices:
-    - Turkish orthography is near-phonemic: every vowel letter is a separate
-      syllable nucleus, so vowel-counting is a reliable syllable proxy that
-      does not require a pronunciation dictionary.
-    - The −1.5 baseline subtracts the natural minimum vowel load.  Simple
-      Turkish words already carry ~1.5 vowels on average; only excess beyond
-      that baseline is penalised.
-    - ASL has a larger absolute coefficient because sentence length is the
-      strongest predictor of perceived text difficulty across languages.
-    - SPW is de-weighted relative to English Flesch (coefficient 12 vs 84.6)
-      because Turkish agglutination routinely produces high-syllable-count
-      words (e.g. "kullanılmaktadır" = 7 syllables) that are morphologically
-      common and not necessarily harder for native readers.
-
-Known limitations:
-    1. Not validated against Turkish reading-comprehension studies.
-    2. Morphologically complex but frequent words are over-penalised.
-    3. The score may underestimate difficulty for texts with rare vocabulary
-       or domain-specific terminology, since TRI is a surface-form metric.
-    4. Turkish academic registers often use very long sentences with heavy
-       subordination; TRI may underestimate difficulty when the clause
-       structure is complex but word lengths are moderate.
-    5. Results should be treated as a heuristic signal, not a standardised
-       psychometric measure.
-"""
+"""Readability analyzer for English (Flesch) and Turkish (TRI heuristic)."""
 
 import textstat
 
@@ -50,7 +7,6 @@ from src.models.analysis import AnalysisContext
 from src.models.enums import Language
 from src.models.response import ReadabilityResult
 
-# Turkish vowel set — all eight vowels in the Turkish alphabet.
 _TR_VOWELS: frozenset[str] = frozenset("aeıioöuü")
 
 
@@ -99,10 +55,6 @@ class ReadabilityAnalyzer(BaseAnalyzer[ReadabilityResult]):
             return _analyze_turkish(context)
         return _analyze_english(context)
 
-
-# ---------------------------------------------------------------------------
-# Language-specific dispatch functions — independently testable, no state.
-# ---------------------------------------------------------------------------
 
 
 def _analyze_english(context: AnalysisContext) -> ReadabilityResult:

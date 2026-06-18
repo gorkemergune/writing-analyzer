@@ -6,11 +6,6 @@ from typing import Any
 from src.models.analysis import AnalysisContext
 from src.models.enums import DocumentType, Language
 
-# ---------------------------------------------------------------------------
-# Module-level optional import — NLTK is desired but not required.
-# The flag is checked before any nltk call so the app never raises
-# ModuleNotFoundError if the package is absent.
-# ---------------------------------------------------------------------------
 try:
     import nltk
     import nltk.stem
@@ -19,17 +14,8 @@ try:
 except ImportError:
     _NLTK_IMPORTABLE = False
 
-# ---------------------------------------------------------------------------
-# Compiled patterns used by the regex-based fallback pipelines.
-# ---------------------------------------------------------------------------
-
-# Turkish alphabetic characters including all diacritics: ç ğ ı ö ş ü + uppercase.
 _WORD_TR = re.compile(r"[a-zA-ZçğışöüÇĞİÖŞÜ]+", re.UNICODE)
-
-# Plain ASCII alphabetic fallback for English when NLTK is absent.
 _WORD_EN = re.compile(r"[a-zA-Z]+")
-
-# Sentence boundary: any .!? followed by one or more whitespace characters.
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 
 _WHITESPACE = re.compile(r"\s+")
@@ -57,10 +43,6 @@ class TokenizerService:
         self._nltk_ready: bool = self._prepare_nltk()
         self._porter: Any = self._load_porter()
         self._zeyrek: Any = self._load_zeyrek()
-
-    # ------------------------------------------------------------------
-    # Initialisation helpers
-    # ------------------------------------------------------------------
 
     @staticmethod
     def _prepare_nltk() -> bool:
@@ -111,10 +93,6 @@ class TokenizerService:
         except Exception:
             return None
 
-    # ------------------------------------------------------------------
-    # Public interface
-    # ------------------------------------------------------------------
-
     def build_context(
         self,
         raw_text: str,
@@ -159,18 +137,10 @@ class TokenizerService:
         """True when zeyrek is installed and MorphAnalyzer initialised successfully."""
         return self._zeyrek is not None
 
-    # ------------------------------------------------------------------
-    # Internal pipeline — sentence splitting
-    # ------------------------------------------------------------------
-
     def _split_sentences(self, text: str, language: Language) -> list[str]:
         if language == Language.ENGLISH and self._nltk_ready:
             return nltk.sent_tokenize(text)
         return _split_sentences_regex(text)
-
-    # ------------------------------------------------------------------
-    # Internal pipeline — word tokenization
-    # ------------------------------------------------------------------
 
     def _tokenize(self, text: str, language: Language) -> list[str]:
         if language == Language.TURKISH:
@@ -178,10 +148,6 @@ class TokenizerService:
         if self._nltk_ready:
             return _tokenize_en_nltk(text)
         return _tokenize_en_regex(text)
-
-    # ------------------------------------------------------------------
-    # Internal pipeline — stemming / lemmatization
-    # ------------------------------------------------------------------
 
     def _stem(self, tokens: list[str], language: Language) -> list[str]:
         if language == Language.ENGLISH:
@@ -206,10 +172,6 @@ class TokenizerService:
                 results.append(token)
         return results
 
-
-# ---------------------------------------------------------------------------
-# Module-level pure functions — independently testable, no class state.
-# ---------------------------------------------------------------------------
 
 def _normalize_whitespace(text: str) -> str:
     """Collapse internal whitespace sequences and strip leading/trailing space."""

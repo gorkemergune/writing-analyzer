@@ -1,46 +1,4 @@
-"""Configurable weight set for the academic risk scoring model.
-
-Weight rationale
-================
-Each weight expresses the proportional contribution of that signal to the
-overall academic risk score.  Weights must sum to 1.0.  The defaults below
-are calibrated for generic academic writing (essays, assignments, reports).
-
-repetition (0.25) — highest weight
-    Vocabulary and phrase repetition is the single strongest surface-form
-    signal of formulaic writing.  Human writers naturally vary phrasing;
-    repetitive text is consistent with template-based or AI-assisted
-    writing regardless of domain or language.
-
-low_burstiness (0.20) — second highest
-    Uniform sentence length is a well-documented characteristic of
-    machine-generated text across languages.  Human writers produce varied
-    sentence rhythms; uniformity (low burstiness) is therefore a stronger
-    structural signal than any single lexical feature.
-
-transition_overuse (0.15)
-    Formulaic discourse markers ("Furthermore", "In conclusion", "Sonuç
-    olarak") are template-writing signatures.  They share weight with
-    lexical_poverty and cliche_density because they measure overlapping
-    dimensions of formulaic language use.
-
-lexical_poverty (0.15)
-    Low lexical diversity reduces independently alongside repetition.
-    Kept at parity with transition_overuse because restricted vocabulary
-    is a strong secondary signal that compounds repetition risk.
-
-cliche_density (0.15)
-    Clichés are direct, unambiguous instances of non-original writing.
-    Equal weight to transition_overuse and lexical_poverty: each cliché is
-    a concrete evidence item, but the signal saturates quickly (five
-    clichés per 100 words is already maximal).
-
-readability (0.10) — lowest weight
-    Academic text that is unusually easy to read for its register may
-    indicate language simplification.  The weakest predictor on its own:
-    many legitimate student texts are highly readable, so this feature
-    only contributes meaningfully when other signals are also elevated.
-"""
+"""Scoring weight configuration for the academic risk model."""
 
 from dataclasses import dataclass
 
@@ -86,5 +44,4 @@ class ScoringWeights:
             )
 
 
-#: Default weights used when no custom configuration is provided.
 DEFAULT_WEIGHTS = ScoringWeights()

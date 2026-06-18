@@ -6,11 +6,6 @@ from src.analyzers.base import BaseAnalyzer
 from src.models.analysis import AnalysisContext
 from src.models.response import TransitionResult
 
-# ---------------------------------------------------------------------------
-# Known transition expressions for each supported language.
-# All entries must be lowercase; multi-word phrases are space-separated.
-# ---------------------------------------------------------------------------
-
 _EN_TRANSITIONS: tuple[str, ...] = (
     "furthermore",
     "moreover",
@@ -36,7 +31,6 @@ _TR_TRANSITIONS: tuple[str, ...] = (
 
 _ALL_TRANSITIONS: tuple[str, ...] = _EN_TRANSITIONS + _TR_TRANSITIONS
 
-# Map each phrase's token tuple to its canonical string form for O(1) lookup.
 _PHRASE_MAP: dict[tuple[str, ...], str] = {
     tuple(phrase.split()): phrase
     for phrase in _ALL_TRANSITIONS
@@ -97,10 +91,6 @@ class TransitionAnalyzer(BaseAnalyzer[TransitionResult]):
             transition_score=score,
         )
 
-
-# ---------------------------------------------------------------------------
-# Module-level pure helper functions — independently testable, no state.
-# ---------------------------------------------------------------------------
 
 
 def _count_transitions(tokens: tuple[str, ...]) -> Counter[str]:

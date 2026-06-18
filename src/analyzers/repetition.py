@@ -6,12 +6,6 @@ from src.analyzers.base import BaseAnalyzer
 from src.models.analysis import AnalysisContext
 from src.models.response import RepeatedItem, RepetitionResult
 
-# ---------------------------------------------------------------------------
-# Stop-word sets used to filter function words from repetition signals.
-# Only surface-form tokens are checked (not stems), so the lists must
-# include the exact lowercased forms that appear in context.tokens.
-# ---------------------------------------------------------------------------
-
 _EN_STOP_WORDS: frozenset[str] = frozenset({
     "a", "an", "the", "and", "or", "but", "nor", "of", "in", "on", "at",
     "to", "for", "with", "by", "from", "as", "into", "through", "about",
@@ -132,10 +126,6 @@ class RepetitionAnalyzer(BaseAnalyzer[RepetitionResult]):
             repetition_score=score,
         )
 
-
-# ---------------------------------------------------------------------------
-# Module-level pure helper functions — independently testable, no state.
-# ---------------------------------------------------------------------------
 
 
 def _find_repeated_words(

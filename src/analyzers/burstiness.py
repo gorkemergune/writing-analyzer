@@ -6,11 +6,6 @@ from src.analyzers.base import BaseAnalyzer
 from src.models.analysis import AnalysisContext
 from src.models.response import BurstinessResult
 
-# ---------------------------------------------------------------------------
-# Classification thresholds (applied as strict upper bounds).
-# very_uniform: B < -0.6  |  uniform: B < -0.2  |  neutral: B < 0.2
-# bursty:       B < 0.5   |  highly_bursty: B >= 0.5
-# ---------------------------------------------------------------------------
 _THRESHOLDS: tuple[float, float, float, float] = (-0.6, -0.2, 0.2, 0.5)
 _LABELS: tuple[str, str, str, str, str] = (
     "very_uniform",
@@ -68,10 +63,6 @@ class BurstinessAnalyzer(BaseAnalyzer[BurstinessResult]):
             classification=_classify(b_value),
         )
 
-
-# ---------------------------------------------------------------------------
-# Module-level pure helper functions — independently testable, no state.
-# ---------------------------------------------------------------------------
 
 
 def _compute_burstiness(lengths: tuple[int, ...]) -> float:
